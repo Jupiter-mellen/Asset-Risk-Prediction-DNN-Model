@@ -111,5 +111,97 @@ pip install -r requirements.txt
 # launch notebook
 jupyter notebook
 ```
-Raw model
+
+Notebook outputs:
+
+outputs/risk_report.csv — ranked assets by calibrated risk
+
+outputs/tf_model.keras — saved TensorFlow model
+
+outputs/isotonic_calibrator.joblib — saved calibrator
+
+outputs/metrics.txt — text summary of scores
+
+What worked well
+Simple engineered features (temperature delta, power proxy, wear per power) helped the DNN reach strong ROC AUC.
+
+Early stopping and dropout prevented overfitting.
+
+Isotonic calibration produced better-behaved probabilities for thresholding and risk communication.
+
+What to improve next
+Class imbalance
+
+Try focal loss or class-weighted loss with tuned weights.
+
+Evaluate SMOTE or other resampling strategies.
+
+Temporal signal
+
+Replace snapshot features with short histories per asset.
+
+Consider sequence models (1D CNN, LSTM/GRU) or rolling statistics per asset and per site.
+
+Feature scope
+
+Add maintenance history (time since last service, count of faults), environmental context, and asset metadata.
+
+Decision policy
+
+Optimise thresholds for business goals (e.g., maximise recall at a minimum precision).
+
+Report practical metrics such as Recall@Top-K assets per day/week.
+
+Explainability
+
+Add permutation importance and SHAP to identify the strongest drivers of risk.
+
+Reproducing the figures
+In the notebook, after generating predictions:
+
+# Save PR curve
+from sklearn.metrics import precision_recall_curve, roc_curve
+import matplotlib.pyplot as plt
+
+prec, rec, _ = precision_recall_curve(y_test, y_pred_raw)
+plt.figure()
+plt.plot(rec, prec, label=f'Raw (AP={pr_raw:.3f})')
+prec_c, rec_c, _ = precision_recall_curve(y_test, y_pred_cal)
+plt.plot(rec_c, prec_c, label=f'Calibrated (AP={pr_cal:.3f})')
+plt.xlabel('Recall'); plt.ylabel('Precision'); plt.title('Precision-Recall Curve'); plt.legend()
+plt.savefig('pr_curve.png', dpi=150, bbox_inches='tight')
+
+# Save ROC curve
+fpr, tpr, _ = roc_curve(y_test, y_pred_raw)
+fpr_c, tpr_c, _ = roc_curve(y_test, y_pred_cal)
+plt.figure()
+plt.plot(fpr, tpr, label=f'Raw (AUC={roc_raw:.3f})')
+plt.plot(fpr_c, tpr_c, label=f'Calibrated (AUC={roc_cal:.3f})')
+plt.plot([0,1],[0,1],'--', alpha=0.5)
+plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate'); plt.title('ROC Curve'); plt.legend()
+plt.savefig('roc_curve.png', dpi=150, bbox_inches='tight')
+
+# Save calibration curve
+from sklearn.calibration import calibration_curve
+pt_raw, pp_raw = calibration_curve(y_test, y_pred_raw, n_bins=10, strategy='quantile')
+pt_cal, pp_cal = calibration_curve(y_test, y_pred_cal, n_bins=10, strategy='quantile')
+plt.figure()
+plt.plot(pp_raw, pt_raw, 's-', label='Raw')
+plt.plot(pp_cal, pt_cal, 's-', label='Calibrated')
+plt.plot([0,1],[0,1],'--', alpha=0.5)
+plt.xlabel('Predicted Probability'); plt.ylabel('Observed Frequency'); plt.title('Calibration Curve'); plt.legend()
+plt.savefig('calibration_curve.png', dpi=150, bbox_inches='tight')
+
+
+Repository structure (suggested)
+
+.
+├─ Asset_Risk_Prediction.ipynb
+├─ README.md
+├─ requirements.txt
+└─ outputs/
+   ├─ risk_report.csv
+   ├─ tf_model.keras
+   ├─ isotonic_calibrator.joblib
+   └─ metrics.txt
 
