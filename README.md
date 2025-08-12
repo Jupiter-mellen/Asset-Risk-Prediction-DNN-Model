@@ -49,31 +49,36 @@ Key fields used:
 ## Results (test set)
 
 | Metric | Raw model | Calibrated model |
-| --- | ---: | ---: |
+|--------|-----------|------------------|
 | ROC AUC | 0.886 | 0.868 |
 | PR AUC (Average Precision) | 0.534 | 0.453 |
 
 **Confusion matrix (threshold = 0.50)**
 
-Raw model
+Raw model:
+```
+[[1854   78]
+ [  23   45]]
+```
 
-[[1854 78]
-[ 23 45]]
+Calibrated model:
+```
+[[1913   19]
+ [  35   33]]
+```
 
-Calibrated model
+**Classification report (calibrated, threshold = 0.50)**
 
-[[1913 19]
-[ 35 33]]
+```
+              precision    recall  f1-score   support
 
-Classification report (calibrated, threshold = 0.50)
+           0       0.982     0.990     0.986      1932
+           1       0.635     0.485     0.550        68
 
-precision recall f1-score support
-0 0.982 0.990 0.986 1932
-1 0.635 0.485 0.550 68
-accuracy 0.973 2000
-macro avg 0.808 0.738 0.768 2000
-weighted avg 0.970 0.973 0.971 2000
-
+    accuracy                           0.973      2000
+   macro avg       0.808     0.738     0.768      2000
+weighted avg       0.970     0.973     0.971      2000
+```
 
 **Interpretation**
 - The model separates classes well (high ROC AUC).
@@ -84,13 +89,13 @@ weighted avg 0.970 0.973 0.971 2000
 
 ## Visualisations
 
-Precision–Recall Curve  
+**Precision–Recall Curve**  
 ![Precision–Recall Curve](pr_curve.png)
 
-ROC Curve  
+**ROC Curve**  
 ![ROC Curve](roc_curve.png)
 
-Calibration Curve  
+**Calibration Curve**  
 ![Calibration Curve](calibration_curve.png)
 
 > If these images are not yet in your repo, save the figures from the notebook as:
@@ -112,53 +117,46 @@ pip install -r requirements.txt
 jupyter notebook
 ```
 
-Notebook outputs:
+**Notebook outputs:**
+- `outputs/risk_report.csv` — ranked assets by calibrated risk
+- `outputs/tf_model.keras` — saved TensorFlow model
+- `outputs/isotonic_calibrator.joblib` — saved calibrator
+- `outputs/metrics.txt` — text summary of scores
 
-outputs/risk_report.csv — ranked assets by calibrated risk
+---
 
-outputs/tf_model.keras — saved TensorFlow model
+## What worked well
+- Simple engineered features (temperature delta, power proxy, wear per power) helped the DNN reach strong ROC AUC.
+- Early stopping and dropout prevented overfitting.
+- Isotonic calibration produced better-behaved probabilities for thresholding and risk communication.
 
-outputs/isotonic_calibrator.joblib — saved calibrator
+## What to improve next
 
-outputs/metrics.txt — text summary of scores
+### Class imbalance
+- Try focal loss or class-weighted loss with tuned weights.
+- Evaluate SMOTE or other resampling strategies.
 
-What worked well
-Simple engineered features (temperature delta, power proxy, wear per power) helped the DNN reach strong ROC AUC.
+### Temporal signal
+- Replace snapshot features with short histories per asset.
+- Consider sequence models (1D CNN, LSTM/GRU) or rolling statistics per asset and per site.
 
-Early stopping and dropout prevented overfitting.
+### Feature scope
+- Add maintenance history (time since last service, count of faults), environmental context, and asset metadata.
 
-Isotonic calibration produced better-behaved probabilities for thresholding and risk communication.
+### Decision policy
+- Optimise thresholds for business goals (e.g., maximise recall at a minimum precision).
+- Report practical metrics such as Recall@Top-K assets per day/week.
 
-What to improve next
-Class imbalance
+### Explainability
+- Add permutation importance and SHAP to identify the strongest drivers of risk.
 
-Try focal loss or class-weighted loss with tuned weights.
+---
 
-Evaluate SMOTE or other resampling strategies.
+## Reproducing the figures
 
-Temporal signal
-
-Replace snapshot features with short histories per asset.
-
-Consider sequence models (1D CNN, LSTM/GRU) or rolling statistics per asset and per site.
-
-Feature scope
-
-Add maintenance history (time since last service, count of faults), environmental context, and asset metadata.
-
-Decision policy
-
-Optimise thresholds for business goals (e.g., maximise recall at a minimum precision).
-
-Report practical metrics such as Recall@Top-K assets per day/week.
-
-Explainability
-
-Add permutation importance and SHAP to identify the strongest drivers of risk.
-
-Reproducing the figures
 In the notebook, after generating predictions:
 
+```python
 # Save PR curve
 from sklearn.metrics import precision_recall_curve, roc_curve
 import matplotlib.pyplot as plt
@@ -168,7 +166,10 @@ plt.figure()
 plt.plot(rec, prec, label=f'Raw (AP={pr_raw:.3f})')
 prec_c, rec_c, _ = precision_recall_curve(y_test, y_pred_cal)
 plt.plot(rec_c, prec_c, label=f'Calibrated (AP={pr_cal:.3f})')
-plt.xlabel('Recall'); plt.ylabel('Precision'); plt.title('Precision-Recall Curve'); plt.legend()
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
+plt.legend()
 plt.savefig('pr_curve.png', dpi=150, bbox_inches='tight')
 
 # Save ROC curve
@@ -178,7 +179,10 @@ plt.figure()
 plt.plot(fpr, tpr, label=f'Raw (AUC={roc_raw:.3f})')
 plt.plot(fpr_c, tpr_c, label=f'Calibrated (AUC={roc_cal:.3f})')
 plt.plot([0,1],[0,1],'--', alpha=0.5)
-plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate'); plt.title('ROC Curve'); plt.legend()
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.legend()
 plt.savefig('roc_curve.png', dpi=150, bbox_inches='tight')
 
 # Save calibration curve
@@ -189,19 +193,25 @@ plt.figure()
 plt.plot(pp_raw, pt_raw, 's-', label='Raw')
 plt.plot(pp_cal, pt_cal, 's-', label='Calibrated')
 plt.plot([0,1],[0,1],'--', alpha=0.5)
-plt.xlabel('Predicted Probability'); plt.ylabel('Observed Frequency'); plt.title('Calibration Curve'); plt.legend()
+plt.xlabel('Predicted Probability')
+plt.ylabel('Observed Frequency')
+plt.title('Calibration Curve')
+plt.legend()
 plt.savefig('calibration_curve.png', dpi=150, bbox_inches='tight')
+```
 
+---
 
-Repository structure (suggested)
+## Repository structure (suggested)
 
+```
 .
-├─ Asset_Risk_Prediction.ipynb
-├─ README.md
-├─ requirements.txt
-└─ outputs/
-   ├─ risk_report.csv
-   ├─ tf_model.keras
-   ├─ isotonic_calibrator.joblib
-   └─ metrics.txt
-
+├── Asset_Risk_Prediction.ipynb
+├── README.md
+├── requirements.txt
+└── outputs/
+    ├── risk_report.csv
+    ├── tf_model.keras
+    ├── isotonic_calibrator.joblib
+    └── metrics.txt
+```
