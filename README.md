@@ -1,4 +1,4 @@
-# Asset Risk Prediction — TensorFlow Deep Neural Network
+# Asset Risk Prediction: TensorFlow Deep Neural Network
 
 ## Overview
 This project implements a predictive maintenance prototype that estimates the likelihood of asset failure from operational data. The goal is to produce ranked risk scores so maintenance teams can prioritise inspections and interventions. The model is a TensorFlow/Keras deep neural network trained on the AI4I 2020 Predictive Maintenance dataset.
