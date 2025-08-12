@@ -87,19 +87,24 @@ weighted avg       0.970     0.973     0.971      2000
 
 ---
 
-## Visualisations
+## Model Performance Visualizations
 
-**Precision–Recall Curve**  
-![Precision–Recall Curve](pr_curve.png)
+The following plots demonstrate the model's performance and calibration quality:
 
-**ROC Curve**  
-![ROC Curve](roc_curve.png)
+### Precision-Recall Curve
+![Precision-Recall Curve](images/pr_curve.png)
 
-**Calibration Curve**  
-![Calibration Curve](calibration_curve.png)
+The precision-recall curve shows how well the model distinguishes between failure and non-failure cases. The calibrated model maintains strong performance while providing more reliable probability estimates for business decision-making.
 
-> If these images are not yet in your repo, save the figures from the notebook as:
-> `pr_curve.png`, `roc_curve.png`, and `calibration_curve.png` in the project root (or update the paths above).
+### ROC Curve
+![ROC Curve](images/roc_curve.png)
+
+Both raw and calibrated models achieve strong ROC-AUC scores (>0.86), demonstrating excellent ability to rank assets by failure risk. The calibrated model preserves this ranking performance while improving probability reliability.
+
+### Calibration Curve
+![Calibration Curve](images/calibration_curve.png)
+
+The calibration plot reveals that the raw model tends to be overconfident in its predictions. After isotonic calibration, the predicted probabilities align much better with observed failure rates, making the scores more trustworthy for maintenance planning.
 
 ---
 
@@ -152,52 +157,57 @@ jupyter notebook
 
 ---
 
-## Reproducing the figures
+## Reproducing the results
 
-In the notebook, after generating predictions:
+To generate the performance visualizations shown above, run this code block in your notebook after model evaluation:
 
 ```python
-# Save PR curve
-from sklearn.metrics import precision_recall_curve, roc_curve
+# Simple plot generation using existing data
 import matplotlib.pyplot as plt
-
-prec, rec, _ = precision_recall_curve(y_test, y_pred_raw)
-plt.figure()
-plt.plot(rec, prec, label=f'Raw (AP={pr_raw:.3f})')
-prec_c, rec_c, _ = precision_recall_curve(y_test, y_pred_cal)
-plt.plot(rec_c, prec_c, label=f'Calibrated (AP={pr_cal:.3f})')
-plt.xlabel('Recall')
-plt.ylabel('Precision')
-plt.title('Precision-Recall Curve')
-plt.legend()
-plt.savefig('pr_curve.png', dpi=150, bbox_inches='tight')
-
-# Save ROC curve
-fpr, tpr, _ = roc_curve(y_test, y_pred_raw)
-fpr_c, tpr_c, _ = roc_curve(y_test, y_pred_cal)
-plt.figure()
-plt.plot(fpr, tpr, label=f'Raw (AUC={roc_raw:.3f})')
-plt.plot(fpr_c, tpr_c, label=f'Calibrated (AUC={roc_cal:.3f})')
-plt.plot([0,1],[0,1],'--', alpha=0.5)
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('ROC Curve')
-plt.legend()
-plt.savefig('roc_curve.png', dpi=150, bbox_inches='tight')
-
-# Save calibration curve
+from sklearn.metrics import precision_recall_curve, roc_curve
 from sklearn.calibration import calibration_curve
-pt_raw, pp_raw = calibration_curve(y_test, y_pred_raw, n_bins=10, strategy='quantile')
-pt_cal, pp_cal = calibration_curve(y_test, y_pred_cal, n_bins=10, strategy='quantile')
-plt.figure()
-plt.plot(pp_raw, pt_raw, 's-', label='Raw')
-plt.plot(pp_cal, pt_cal, 's-', label='Calibrated')
-plt.plot([0,1],[0,1],'--', alpha=0.5)
-plt.xlabel('Predicted Probability')
-plt.ylabel('Observed Frequency')
-plt.title('Calibration Curve')
-plt.legend()
-plt.savefig('calibration_curve.png', dpi=150, bbox_inches='tight')
+import os
+
+# Create output directory
+os.makedirs('images', exist_ok=True)
+
+# Precision-Recall Curve
+precision_raw, recall_raw, _ = precision_recall_curve(y_test, proba)
+precision_cal, recall_cal, _ = precision_recall_curve(y_test, proba_cal)
+
+plt.figure(figsize=(8, 6))
+plt.plot(recall_raw, precision_raw, label=f'Raw (AP={pr:.3f})', linewidth=2)
+plt.plot(recall_cal, precision_cal, label=f'Calibrated (AP={pr_cal:.3f})', linewidth=2)
+plt.xlabel('Recall'); plt.ylabel('Precision'); plt.title('Precision-Recall Curve')
+plt.legend(); plt.grid(True)
+plt.savefig('images/pr_curve.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# ROC Curve  
+fpr_raw, tpr_raw, _ = roc_curve(y_test, proba)
+fpr_cal, tpr_cal, _ = roc_curve(y_test, proba_cal)
+
+plt.figure(figsize=(8, 6))
+plt.plot(fpr_raw, tpr_raw, label=f'Raw (AUC={roc:.3f})', linewidth=2)
+plt.plot(fpr_cal, tpr_cal, label=f'Calibrated (AUC={roc_cal:.3f})', linewidth=2)
+plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
+plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate'); plt.title('ROC Curve')
+plt.legend(); plt.grid(True)
+plt.savefig('images/roc_curve.png', dpi=150, bbox_inches='tight')
+plt.show()
+
+# Calibration Curve
+prob_true_raw, prob_pred_raw = calibration_curve(y_test, proba, n_bins=10)
+prob_true_cal, prob_pred_cal = calibration_curve(y_test, proba_cal, n_bins=10)
+
+plt.figure(figsize=(8, 6))
+plt.plot(prob_pred_raw, prob_true_raw, 's-', label='Raw')
+plt.plot(prob_pred_cal, prob_true_cal, 'o-', label='Calibrated')
+plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
+plt.xlabel('Mean Predicted Probability'); plt.ylabel('Fraction of Positives'); plt.title('Calibration Curve')
+plt.legend(); plt.grid(True)
+plt.savefig('images/calibration_curve.png', dpi=150, bbox_inches='tight')
+plt.show()
 ```
 
 ---
