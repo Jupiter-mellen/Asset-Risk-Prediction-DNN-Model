@@ -94,11 +94,11 @@ def main():
     st.sidebar.header("Machine Parameters")
     
     # Input fields
-    air_temp = st.sidebar.number_input("Air Temperature (K)", min_value=290.0, max_value=310.0, value=298.0, step=0.1)
-    process_temp = st.sidebar.number_input("Process Temperature (K)", min_value=300.0, max_value=320.0, value=308.0, step=0.1)
-    rpm = st.sidebar.number_input("Rotational Speed (RPM)", min_value=1000, max_value=3000, value=1500, step=10)
-    torque = st.sidebar.number_input("Torque (Nm)", min_value=10.0, max_value=80.0, value=40.0, step=0.5)
-    tool_wear = st.sidebar.number_input("Tool Wear (min)", min_value=0, max_value=300, value=100, step=1)
+    air_temp = st.sidebar.number_input("Air Temperature (K)", min_value=280.0, max_value=320.0, value=298.0, step=0.1)
+    process_temp = st.sidebar.number_input("Process Temperature (K)", min_value=290.0, max_value=330.0, value=308.0, step=0.1)
+    rpm = st.sidebar.number_input("Rotational Speed (RPM)", min_value=500, max_value=4000, value=1500, step=10)
+    torque = st.sidebar.number_input("Torque (Nm)", min_value=5.0, max_value=100.0, value=40.0, step=0.5)
+    tool_wear = st.sidebar.number_input("Tool Wear (min)", min_value=0, max_value=500, value=100, step=1)
     machine_type = st.sidebar.selectbox("Machine Type", ["H", "L", "M"])
     
     # Predict button
