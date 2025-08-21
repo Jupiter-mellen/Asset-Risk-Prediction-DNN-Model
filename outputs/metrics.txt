@@ -1,6 +1,6 @@
 Asset Risk Prediction — TensorFlow DNN
-ROC AUC (raw): 0.886
-PR  AUC (raw): 0.534
-ROC AUC (cal): 0.868
-PR  AUC (cal): 0.453
-Confusion matrix (0.5): [[1854, 78], [23, 45]]
+ROC AUC (raw): 0.975
+PR  AUC (raw): 0.673
+ROC AUC (cal): 0.972
+PR  AUC (cal): 0.640
+Confusion matrix (0.5): [[1908, 24], [24, 44]]
